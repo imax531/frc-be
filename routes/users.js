@@ -1,6 +1,6 @@
 const express = require('express');
 const uuidv4 = require('uuidv4');
-const { tables, client } = require('../data/postgress');
+const { tables, client, areParametersAreSafe } = require('../data/postgress');
 
 const router = express.Router();
 const UserTypes = {
@@ -10,18 +10,8 @@ const UserTypes = {
 	admin: 3,
 };
 
-const users = [
-	{ username: 'red1', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'red2', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'red3', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'blue1', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'blue2', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'blue3', password: 'moyal', type: UserTypes.scouter },
-	{ username: 'manager', password: 'moyal', type: UserTypes.manager },
-	{ username: 'coatch', password: 'moyal', type: UserTypes.coatch },
-];
-
 const authenticateUser = token => {
+	if (!areParametersAreSafe(token)) return;
 	return new Promise((resolve, reject) => {
 		const sql = `SELECT *
 			FROM ${tables.loginSession} JOIN users ON ${tables.loginSession}.username = ${tables.users}.username
@@ -48,10 +38,13 @@ router.get('/', (req, res) => {
 
 router.post('/', function (req, res, next) {
 	const { username, password } = req.body;
-	client.query(`SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`, (err, result) => {
+	const answer = { success: false };
+
+	if (!areParametersAreSafe(username, password))
+		res.send(answer);
+	else client.query(`SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`, (err, result) => {
 		if (err) throw err;
 		const user = result.rows[0];
-		const answer = { success: false };
 		if (user) {
 			const token = uuidv4();
 			client.query(`INSERT INTO ${tables.loginSession} VALUES('${username}', '${token}')`);

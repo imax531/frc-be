@@ -23,14 +23,14 @@ resetDataset = () => {
 			token varchar(36) NOT NULL,  
 			created_at TIMESTAMP NOT NULL DEFAULT now()
 		)`);
-	
+
 	client.query(
 		`CREATE TABLE ${users} (
 			username varchar(45) NOT NULL,  
 			password varchar(45) NOT NULL,  
 			type integer NOT NULL DEFAULT '0'
 		)`);
-	
+
 	// Fill tables with data
 	const password = 'moyal';
 	client.query(`INSERT INTO ${users} VALUES('red1', '${password}')`);
@@ -46,8 +46,16 @@ resetDataset = () => {
 
 // resetDataset();
 
+areParametersAreSafe = ([...args]) => {
+	const regex = /^[a-zA-Z0-9_-]*$/;
+	for (let x of args)
+		if (!regex.test(x))
+			return false;
+	return true;
+}
 
 module.exports = {
 	client,
-	tables
+	tables,
+	areParametersAreSafe
 };

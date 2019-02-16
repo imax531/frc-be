@@ -1,31 +1,34 @@
-const { Client } = require('pg');
+const { Pool } = require('pg');
+const UserTypes = require('../utility/userTypes');
 
 const tables = {
 	users: 'users',
 	loginSession: 'loginSession'
 };
 
-const client = new Client({
-	connectionString: process.env.DATABASE_URL,
-	ssl: true,
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: true });
+const client = pool;
+
+pool.on('error', (err, client) => {
+	console.error('Unexpected error on idle client', err)
+	process.exit(-1)
 });
-client.connect();
 
 resetDataset = () => {
 	// Delete all existing tables
-	client.query(`DROP TABLE ${loginSession} IF EXISTS`);
-	client.query(`DROP TABLE ${users} IF EXISTS`);
+	client.query(`DROP TABLE IF EXISTS ${tables.loginSession}`);
+	client.query(`DROP TABLE IF EXISTS ${tables.users}`);
 
 	// Recreate the tables
 	client.query(
-		`CREATE TABLE ${loginSession} (
+		`CREATE TABLE ${tables.loginSession} (
 			username varchar(45) NOT NULL,  
 			token varchar(36) NOT NULL,  
 			created_at TIMESTAMP NOT NULL DEFAULT now()
 		)`);
 
 	client.query(
-		`CREATE TABLE ${users} (
+		`CREATE TABLE ${tables.users} (
 			username varchar(45) NOT NULL,  
 			password varchar(45) NOT NULL,  
 			type integer NOT NULL DEFAULT '0'
@@ -33,20 +36,20 @@ resetDataset = () => {
 
 	// Fill tables with data
 	const password = 'moyal';
-	client.query(`INSERT INTO ${users} VALUES('red1', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('red2', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('red3', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('blue1', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('blue2', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('blue3', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('coatch', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('manager', '${password}')`);
-	client.query(`INSERT INTO ${users} VALUES('admin', '${password}')`);
+	client.query(`INSERT INTO ${tables.users} VALUES('red1', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('red2', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('red3', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('blue1', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('blue2', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('blue3', '${password}', ${UserTypes.scouter})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('coatch', '${password}', ${UserTypes.coatch})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('manager', '${password}', ${UserTypes.manager})`);
+	client.query(`INSERT INTO ${tables.users} VALUES('admin', '${password}', ${UserTypes.admin})`);
 }
 
 // resetDataset();
 
-areParametersAreSafe = ([...args]) => {
+const areParametersSafe = (...args) => {
 	const regex = /^[a-zA-Z0-9_-]*$/;
 	for (let x of args)
 		if (!regex.test(x))
@@ -57,5 +60,5 @@ areParametersAreSafe = ([...args]) => {
 module.exports = {
 	client,
 	tables,
-	areParametersAreSafe
+	areParametersSafe
 };

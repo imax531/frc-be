@@ -1,8 +1,6 @@
 const { tables, client, areParametersSafe } = require('../data/postgress');
-const UserTypes = require('../utility/userTypes');
 
 const authenticateUser = token => {
-	if (!areParametersSafe(token)) return;
 	return new Promise((resolve, reject) => {
 		const sql = `SELECT *
 			FROM ${tables.loginSession} JOIN users ON ${tables.loginSession}.username = ${tables.users}.username
@@ -14,6 +12,15 @@ const authenticateUser = token => {
 	});
 };
 
+const verifyRequest = async (req, classification) => {
+	if (!areParametersSafe(...Object.values(req.body))) return false;
+	if (!areParametersSafe(...Object.values(req.cookies))) return false;
+
+	const user = await authenticateUser(req.cookies.token);
+	return user && user.type >= classification ? user : undefined;
+}
+
 module.exports = {
-	authenticateUser
+	authenticateUser,
+	verifyRequest
 }

@@ -1,19 +1,18 @@
 const express = require('express');
 const uuidv4 = require('uuidv4');
 const { tables, client, areParametersSafe } = require('../data/postgress');
-const { authenticateUser } = require('../utility/userUtility');
+const { verifyRequest } = require('../utility/userUtility');
 
 const router = express.Router();
 
 router.get('/', (req, res) => {
-	authenticateUser(req.cookies.token)
-		.then(data => data ? {
-			username: data.username,
-			type: data.type
-		} : {
-				error: 1,
-				msg: "Invalid token"
-			})
+	verifyRequest(req, -1).then(data => data ? {
+		username: data.username,
+		type: data.type
+	} : {
+			error: 1,
+			msg: "Invalid token"
+		})
 		.then(data => res.send(data));
 });
 
@@ -35,5 +34,15 @@ router.post('/', function (req, res, next) {
 		res.send(answer);
 	});
 });
+
+router.post('/logout', function (req, res, next) {
+	const { token } = req.cookies;
+
+	if (areParametersSafe(token))
+		client.query(`DELETE FROM ${tables.loginSession} WHERE token = '${token}'`);
+
+	res.send('OK');
+});
+
 
 module.exports = router;

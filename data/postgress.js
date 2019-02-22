@@ -3,7 +3,8 @@ const UserTypes = require('../utility/userTypes');
 
 const tables = {
 	users: 'users',
-	loginSession: 'loginSession'
+	loginSession: 'loginSession',
+	matches: 'matches',
 };
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: true });
@@ -14,24 +15,36 @@ pool.on('error', (err, client) => {
 	process.exit(-1)
 });
 
-resetDataset = () => {
+resetDataset = async () => {
 	// Delete all existing tables
-	client.query(`DROP TABLE IF EXISTS ${tables.loginSession}`);
-	client.query(`DROP TABLE IF EXISTS ${tables.users}`);
+	await client.query(`DROP TABLE IF EXISTS ${tables.loginSession}`);
+	await client.query(`DROP TABLE IF EXISTS ${tables.users}`);
+	await client.query(`DROP TABLE IF EXISTS ${tables.matches}`);
 
 	// Recreate the tables
-	client.query(
+	await client.query(
 		`CREATE TABLE ${tables.loginSession} (
 			username varchar(45) NOT NULL,  
 			token varchar(36) NOT NULL,  
 			created_at TIMESTAMP NOT NULL DEFAULT now()
 		)`);
 
-	client.query(
+	await client.query(
 		`CREATE TABLE ${tables.users} (
-			username varchar(45) NOT NULL,  
-			password varchar(45) NOT NULL,  
-			type integer NOT NULL DEFAULT '0'
+				username varchar(45) NOT NULL,  
+				password varchar(45) NOT NULL,  
+				type integer NOT NULL DEFAULT '0'
+		)`);
+
+	await client.query(
+		`CREATE TABLE ${tables.matches} (
+				id integer NOT NULL,  
+				red1 varchar(60) NOT NULL,
+				red2 varchar(60) NOT NULL,
+				red3 varchar(60) NOT NULL,
+				blue1 varchar(60) NOT NULL,
+				blue2 varchar(60) NOT NULL,
+				blue3 varchar(60) NOT NULL
 		)`);
 
 	// Fill tables with data
